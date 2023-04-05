@@ -28,8 +28,7 @@ internal partial class Program
             return false;
         }
 
-        using var configFile = AppConfig.Filename.OpenReadStream();
-        appConfig = JsonSerializer.Deserialize<AppConfig>(configFile, JsonHelper.Options);
+        appConfig = File.ReadAllText(AppConfig.Filename).ToObj<AppConfig>();
 
         if (appConfig == null)
         {
@@ -50,15 +49,14 @@ internal partial class Program
     {
         if (!TryLoadConfig(out var appConfig))
             return;
-
-        if (appConfig.BotWebSocketUri == null)
+        if (appConfig.BotWebSocketUri.IsEmpty())
         {
             Console.WriteLine("请指定机器人 WebSocket URI");
             Utils.PressAnyKeyToContinue();
             return;
         }
 
-        if (appConfig.ApiKey == null)
+        if (appConfig.ApiKey.IsEmpty())
         {
             Console.WriteLine("请指定机器人 API Key");
             Utils.PressAnyKeyToContinue();
@@ -67,7 +65,7 @@ internal partial class Program
 
         CqWsSession session = new CqWsSession(new CqWsSessionOptions()
         {
-            BaseUri = new Uri(appConfig.BotWebSocketUri)
+            BaseUri = new Uri(appConfig.BotWebSocketUri!)
         });
 
 
