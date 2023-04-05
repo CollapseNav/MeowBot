@@ -1,11 +1,10 @@
-﻿using EleCho.GoCqHttpSdk;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using Collapsenav.Net.Tool;
+using EleCho.GoCqHttpSdk;
 using EleCho.GoCqHttpSdk.Message;
 using MeowBot;
-using NLog;
 using RustSharp;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection.Metadata;
-using System.Text.Json;
 
 internal partial class Program
 {
@@ -19,10 +18,8 @@ internal partial class Program
     {
         if (!File.Exists(AppConfig.Filename))
         {
-            using (FileStream fs = File.OpenWrite(AppConfig.Filename))
-            {
-                JsonSerializer.Serialize(fs, new AppConfig(), JsonHelper.Options);
-            }
+            JsonExt.DefaultJsonSerializerOption.WriteIndented = true;
+            new AppConfig().ToJson().ToBytes().SaveTo(AppConfig.Filename);
 
             Console.WriteLine("配置文件已生成, 请编辑后启动程序");
             Utils.PressAnyKeyToContinue();
@@ -31,7 +28,7 @@ internal partial class Program
             return false;
         }
 
-        using FileStream configFile = File.OpenRead(AppConfig.Filename);
+        using var configFile = AppConfig.Filename.OpenReadStream();
         appConfig = JsonSerializer.Deserialize<AppConfig>(configFile, JsonHelper.Options);
 
         if (appConfig == null)
@@ -126,21 +123,26 @@ internal partial class Program
                     if (msgTxt.StartsWith("#help", StringComparison.OrdinalIgnoreCase))
                     {
                         string helpText =
-                            """
+                            $"""
                             (机器人指令)
 
                             #role:角色           切换角色, 目前支持 CatGirl(猫娘), NewBing(嘴臭必应)
                             #custom-role:内容    自定义角色
                             #reset               重置聊天记录
+                            {(!context.UserId.In(appConfig.AdminList) ? "" :
+                            """
+                            
+                            """
+                            )}
 
-                            注意, 普通用户最多保留 50 条聊天记录, 多的会被删除, 也就是说, 机器人会逐渐忘记你
+                            注意, 普通用户最多保留 {maxHistoryCount} 条聊天记录, 多的会被删除, 也就是说, 机器人会逐渐忘记你
                             """;
-
-                        await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
-                        {
-                            new CqAtMsg(context.UserId),
-                            new CqTextMsg(helpText)
-                        });
+                        await session.SendGroupMsgAsync(context.GroupId, context.UserId, helpText);
+                        // await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
+                        // {
+                        //     new CqAtMsg(context.UserId),
+                        //     new CqTextMsg(helpText)
+                        // });
                     }
                     else if (msgTxt.StartsWith("#reset", StringComparison.OrdinalIgnoreCase))
                     {

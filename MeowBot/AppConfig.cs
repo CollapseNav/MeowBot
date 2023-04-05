@@ -24,6 +24,8 @@ namespace MeowBot
         public long[] AllowList { get; set; } = Array.Empty<long>();
         public long[] BlockList { get; set; } = Array.Empty<long>();
         public long[] GroupWhiteList { get; set; } = Array.Empty<long>();
+        public long[] AdminList { get; set; } = Array.Empty<long>();
+        public GroupConfig[] GroupConfigs { get; set; } = Array.Empty<GroupConfig>();
 
         public static string DefaultChatCompletionApiUrl { get; } = "https://api.openai.com/v1/chat/completions";
         public static string DefaultGptModel { get; } = "gpt-3.5-turbo";

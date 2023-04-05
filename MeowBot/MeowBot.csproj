@@ -5,13 +5,14 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="EleCho.GoCqHttpSdk" Version="1.0.8" />
     <PackageReference Include="NLog" Version="5.1.2" />
     <PackageReference Include="RustSharp" Version="1.0.1" />
+    <PackageReference Include="Collapsenav.Net.Tool" Version="1.3.2" />
   </ItemGroup>
 
 </Project>
