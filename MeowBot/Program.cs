@@ -127,11 +127,23 @@ internal partial class Program
                             #role:
                                 添加新角色 +{角色名称}$${上下文}
                                 删除角色   -{角色名称}
+                            #allow: 白名单,多个号用逗号(,)隔开
+                            #block: 黑名单,多个号用逗号(,)隔开
                             """
                             )}
                             注意, 普通用户最多保留 {maxHistoryCount} 条聊天记录, 多的会被删除, 也就是说, 机器人会逐渐忘记你
                             """;
                         await session.SendGroupMsgAsync(context.GroupId, context.UserId, helpText);
+                    }
+                    else if (msgTxt.StartsWith("#allow"))
+                    {
+                        var users = msgTxt[6..].Trim();
+                        appConfig.AddAllowList(users.Split(',').Select(item => long.Parse(item)).ToArray());
+                    }
+                    else if (msgTxt.StartsWith("#block"))
+                    {
+                        var users = msgTxt[6..].Trim();
+                        appConfig.AddBlockList(users.Split(',').Select(item => long.Parse(item)).ToArray());
                     }
                     else if (msgTxt.StartsWith("#reset", StringComparison.OrdinalIgnoreCase))
                     {
