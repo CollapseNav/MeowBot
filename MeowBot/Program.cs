@@ -124,8 +124,9 @@ internal partial class Program
                             #reset               重置聊天记录
                             {(!context.UserId.In(appConfig.AdminList) ? "" :
                             """
-
-
+                            #role:
+                                添加新角色 +{角色名称}$${上下文}
+                                删除角色   -{角色名称}
                             """
                             )}
                             注意, 普通用户最多保留 {maxHistoryCount} 条聊天记录, 多的会被删除, 也就是说, 机器人会逐渐忘记你
@@ -143,6 +144,26 @@ internal partial class Program
                     {
                         string role = msgTxt.Substring(6).Trim();
 
+                        if (context.UserId.In(appConfig.AdminList))
+                        {
+                            if (role.StartsWith('-'))
+                            {
+                                DefaultAiContext.AiContext.Remove(role[1..]);
+                                await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 移除角色 {role[1..]}");
+                                return;
+                            }
+                            else if (role.StartsWith('+'))
+                            {
+                                var content = role[1..].Split("$$");
+                                if (content.IsEmpty())
+                                {
+                                    await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 添加角色格式错误");
+                                }
+                                DefaultAiContext.AiContext.AddOrUpdate(content[0], content[1]);
+                                await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 添加角色 {content[0]}");
+                                return;
+                            }
+                        }
                         string? initText = DefaultAiContext.GetFromName(role);
                         if (initText != null)
                         {
@@ -254,6 +275,7 @@ internal partial class Program
 
         while (true)
         {
+
             try
             {
                 await session.StartAsync();
