@@ -94,7 +94,7 @@ internal partial class Program
                     {
                         aiSessions[context.UserId] = aiSession = new(
                             new OpenAiChatCompletionSession(
-                                appConfig.ApiKey,
+                                appConfig.ApiKey!,
                                 appConfig.ChatCompletionApiUrl ?? AppConfig.DefaultChatCompletionApiUrl,
                                 appConfig.GptModel ?? AppConfig.DefaultGptModel));
 
@@ -102,18 +102,13 @@ internal partial class Program
                             chatCompletionSession.InitCatGirl();
                     }
 
-                    if (!appConfig.AllowList.Contains(context.UserId) && aiSession.GetUsageCountInLastDuration(TimeSpan.FromMinutes(5)) >= 5)
+                    if (!appConfig.AllowList.Contains(context.UserId) && aiSession.GetUsageCountInLastDuration(TimeSpan.FromSeconds(appConfig.UsageLimitTime)) >= appConfig.UsageLimitCount)
                     {
                         string helpText =
                             $"""
                             (你不在机器人白名单内, {appConfig.UsageLimitTime}秒内仅允许使用{appConfig.UsageLimitCount}次.)
                             """;
-
-                        await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
-                        {
-                            new CqAtMsg(context.UserId),
-                            new CqTextMsg(helpText)
-                        });
+                        await session.SendGroupMsgAsync(context.GroupId, context.UserId, helpText);
 
                         return;
                     }
@@ -124,58 +119,38 @@ internal partial class Program
                             $"""
                             (机器人指令)
 
-                            #role:角色           切换角色, 目前支持 CatGirl(猫娘), NewBing(嘴臭必应)
+                            #role:角色           切换角色, 目前支持 {DefaultAiContext.AiContext.Keys.Join(",")}
                             #custom-role:内容    自定义角色
                             #reset               重置聊天记录
                             {(!context.UserId.In(appConfig.AdminList) ? "" :
                             """
-                            
+
+
                             """
                             )}
-
                             注意, 普通用户最多保留 {maxHistoryCount} 条聊天记录, 多的会被删除, 也就是说, 机器人会逐渐忘记你
                             """;
                         await session.SendGroupMsgAsync(context.GroupId, context.UserId, helpText);
-                        // await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
-                        // {
-                        //     new CqAtMsg(context.UserId),
-                        //     new CqTextMsg(helpText)
-                        // });
                     }
                     else if (msgTxt.StartsWith("#reset", StringComparison.OrdinalIgnoreCase))
                     {
                         aiSession.Session.Reset();
-                        await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
-                        {
-                            new CqAtMsg(context.UserId),
-                            new CqTextMsg("> 会话已重置")
-                        });
+                        await session.SendGroupMsgAsync(context.GroupId, context.UserId, "> 会话已重置");
 
                         return;
                     }
-                    else if (msgTxt.StartsWith("#role:", StringComparison.OrdinalIgnoreCase) ||
-                             msgTxt.StartsWith("#role ", StringComparison.OrdinalIgnoreCase))
+                    else if (msgTxt.HasStartsWith(new[] { "#role:", "#role" }, true))
                     {
                         string role = msgTxt.Substring(6).Trim();
 
-                        string? initText = OpenAiCompletionInitTexts.GetFromName(role);
+                        string? initText = DefaultAiContext.GetFromName(role);
                         if (initText != null)
                         {
                             aiSession.Session.InitWithText(initText);
-                            await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
-                            {
-                                new CqAtMsg(context.UserId),
-                                new CqTextMsg($"> 角色已更新:\n{initText}")
-                            });
+                            await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 角色已更新:\n{initText}");
                         }
                         else
-                        {
-                            await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
-                            {
-                                new CqAtMsg(context.UserId),
-                                new CqTextMsg($"> 找不到执行的角色")
-                            });
-                        }
+                            await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 找不到执行的角色");
                     }
                     else if (msgTxt.StartsWith("#custom-role:", StringComparison.OrdinalIgnoreCase) ||
                              msgTxt.StartsWith("#custom-role ", StringComparison.OrdinalIgnoreCase))
@@ -238,22 +213,14 @@ internal partial class Program
                                     aiSession.AddUsage();
                                     break;
                                 case ErrResult<string, string> err:
-                                    await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
-                                    {
-                                        new CqAtMsg(context.UserId),
-                                        new CqTextMsg($"(请求失败, 请重新尝试, 你也可以使用 #reset 重置机器人. {err.Value})")
-                                    });
+                                    await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"(请求失败, 请重新尝试, 你也可以使用 #reset 重置机器人. {err.Value})");
                                     break;
 
                             }
                         }
                         catch (Exception ex)
                         {
-                            await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
-                                {
-                                    new CqAtMsg(context.UserId),
-                                    new CqTextMsg("(请求失败, 请重新尝试, 你也可以使用 #reset 重置机器人)")
-                                });
+                            await session.SendGroupMsgAsync(context.GroupId, context.UserId, "(请求失败, 请重新尝试, 你也可以使用 #reset 重置机器人)");
 
                             await Console.Out.WriteLineAsync($"Exception: {ex}");
                         }
@@ -303,6 +270,10 @@ internal partial class Program
 
                 await Console.Out.WriteLineAsync("黑名单:");
                 foreach (var item in appConfig.BlockList)
+                    await Console.Out.WriteLineAsync($" | {item}");
+
+                await Console.Out.WriteLineAsync("管理员:");
+                foreach (var item in appConfig.AdminList)
                     await Console.Out.WriteLineAsync($" | {item}");
 
                 await session.WaitForShutdownAsync();
