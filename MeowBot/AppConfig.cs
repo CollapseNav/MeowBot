@@ -70,6 +70,7 @@ namespace MeowBot
             }
             else
                 groups.Add(new GroupConfig { GroupId = groupId, Role = role });
+            GroupConfigs = groups.ToArray();
             SaveConfig();
         }
     }
