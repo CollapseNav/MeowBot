@@ -60,5 +60,17 @@ namespace MeowBot
             AdminList = list.Unique().ToArray();
             SaveConfig();
         }
+
+        public void SetGroupRole(long groupId, string role)
+        {
+            var groups = GroupConfigs.ToList();
+            if (groups.Any(item => item.GroupId == groupId))
+            {
+                groups.FirstOrDefault(item => item.GroupId == groupId).Role = role;
+            }
+            else
+                groups.Add(new GroupConfig { GroupId = groupId, Role = role });
+            SaveConfig();
+        }
     }
 }

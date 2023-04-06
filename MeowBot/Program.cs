@@ -99,7 +99,19 @@ internal partial class Program
                                 appConfig.GptModel ?? AppConfig.DefaultGptModel));
 
                         if (aiSession.Session is OpenAiChatCompletionSession chatCompletionSession)
-                            chatCompletionSession.InitCatGirl();
+                        {
+                            if (context.GroupId.In(appConfig.GroupConfigs?.Select(item => item.GroupId).ToArray()))
+                            {
+                                var role = appConfig.GroupConfigs.FirstOrDefault(item => item.GroupId == context.GroupId)?.Role;
+                                if (DefaultAiContext.GetFromName(role).IsEmpty())
+                                    chatCompletionSession.InitCatGirl();
+                                else
+                                    chatCompletionSession.InitWithText(DefaultAiContext.GetFromName(role));
+
+                            }
+                            else
+                                chatCompletionSession.InitCatGirl();
+                        }
                     }
 
                     if (!appConfig.AllowList.Contains(context.UserId) && aiSession.GetUsageCountInLastDuration(TimeSpan.FromSeconds(appConfig.UsageLimitTime)) >= appConfig.UsageLimitCount)
@@ -120,7 +132,6 @@ internal partial class Program
                             (机器人指令)
 
                             #role:角色           切换角色, 目前支持 {DefaultAiContext.AiContext.Keys.Join(",")}
-                            #custom-role:内容    自定义角色
                             #reset               重置聊天记录
                             {(!context.UserId.In(appConfig.AdminList) ? "" :
                             """
@@ -129,21 +140,30 @@ internal partial class Program
                                 删除角色   -{角色名称}
                             #allow: 白名单,多个号用逗号(,)隔开
                             #block: 黑名单,多个号用逗号(,)隔开
+                            #grouprole 群上下文设置, {群号}:{角色}
                             """
                             )}
                             注意, 普通用户最多保留 {maxHistoryCount} 条聊天记录, 多的会被删除, 也就是说, 机器人会逐渐忘记你
                             """;
                         await session.SendGroupMsgAsync(context.GroupId, context.UserId, helpText);
                     }
+                    else if (msgTxt.StartsWith("#grouprole"))
+                    {
+                        var grouprole = msgTxt[10..].Trim().Split(":");
+                        appConfig.SetGroupRole(long.Parse(grouprole[0]), grouprole[1]);
+                        return;
+                    }
                     else if (msgTxt.StartsWith("#allow"))
                     {
                         var users = msgTxt[6..].Trim();
                         appConfig.AddAllowList(users.Split(',').Select(item => long.Parse(item)).ToArray());
+                        return;
                     }
                     else if (msgTxt.StartsWith("#block"))
                     {
                         var users = msgTxt[6..].Trim();
                         appConfig.AddBlockList(users.Split(',').Select(item => long.Parse(item)).ToArray());
+                        return;
                     }
                     else if (msgTxt.StartsWith("#reset", StringComparison.OrdinalIgnoreCase))
                     {
@@ -184,18 +204,6 @@ internal partial class Program
                         }
                         else
                             await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 找不到执行的角色");
-                    }
-                    else if (msgTxt.StartsWith("#custom-role:", StringComparison.OrdinalIgnoreCase) ||
-                             msgTxt.StartsWith("#custom-role ", StringComparison.OrdinalIgnoreCase))
-                    {
-                        string initText = msgTxt.Substring(13);
-                        aiSession.Session.InitWithText(initText);
-                        await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
-                            {
-                                new CqAtMsg(context.UserId),
-                                new CqTextMsg($"> 角色已更新:\n{initText}")
-                            });
-                        aiSession.Session.Reset();
                     }
                     else if (msgTxt.StartsWith("#history", StringComparison.OrdinalIgnoreCase))
                     {
