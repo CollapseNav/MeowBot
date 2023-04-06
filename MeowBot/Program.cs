@@ -224,6 +224,18 @@ internal partial class Program
 
                         await session.SendGroupMessageAsync(context.GroupId, message);
                     }
+                    else if (msgTxt.StartsWith("#custom-role:", StringComparison.OrdinalIgnoreCase) ||
+                             msgTxt.StartsWith("#custom-role ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string initText = msgTxt.Substring(13);
+                        aiSession.Session.InitWithText(initText);
+                        await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
+                            {
+                                new CqAtMsg(context.UserId),
+                                new CqTextMsg($"> 角色已更新:\n{initText}")
+                            });
+                        aiSession.Session.Reset();
+                    }
                     else
                     {
                         bool dequeue = false;

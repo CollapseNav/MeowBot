@@ -6,7 +6,7 @@ public class DefaultAiContext
 {
     static DefaultAiContext()
     {
-        AiContext.AddOrUpdate("CatGril".ToLower(), CatGirl);
+        AiContext.AddOrUpdate("CatGirl".ToLower(), CatGirl);
         AiContext.AddOrUpdate("NewBing".ToLower(), NewBing);
     }
     public static string CatGirl = OpenAiCompletionInitTexts.CatGirl;
