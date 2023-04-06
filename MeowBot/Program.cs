@@ -79,7 +79,7 @@ internal partial class Program
         });
 
 
-        Dictionary<long, AiComplectionSessionStorage> aiSessions = new Dictionary<long, AiComplectionSessionStorage>();
+        Dictionary<(long, long), AiComplectionSessionStorage> aiSessions = new Dictionary<(long, long), AiComplectionSessionStorage>();
         session.UseGroupMessage(async context =>
         {
             int maxHistoryCount = 50;
@@ -90,9 +90,9 @@ internal partial class Program
                 {
                     string msgTxt = context.Message.Text.Trim();
 
-                    if (!aiSessions.TryGetValue(context.UserId, out AiComplectionSessionStorage? aiSession))
+                    if (!aiSessions.TryGetValue((context.GroupId, context.UserId), out AiComplectionSessionStorage? aiSession))
                     {
-                        aiSessions[context.UserId] = aiSession = new(
+                        aiSessions[(context.GroupId, context.UserId)] = aiSession = new(
                             new OpenAiChatCompletionSession(
                                 appConfig.ApiKey!,
                                 appConfig.ChatCompletionApiUrl ?? AppConfig.DefaultChatCompletionApiUrl,
@@ -107,7 +107,6 @@ internal partial class Program
                                     chatCompletionSession.InitCatGirl();
                                 else
                                     chatCompletionSession.InitWithText(DefaultAiContext.GetFromName(role));
-
                             }
                             else
                                 chatCompletionSession.InitCatGirl();
@@ -151,6 +150,9 @@ internal partial class Program
                     {
                         var grouprole = msgTxt[10..].Trim().Split(":");
                         appConfig.SetGroupRole(long.Parse(grouprole[0]), grouprole[1]);
+                        await Console.Out.WriteLineAsync(appConfig.GroupConfigs.ToJson());
+                        await session.SendGroupMsgAsync(context.GroupId, context.UserId, "> 已修改设置");
+                        aiSession.Session.InitWithText(DefaultAiContext.GetFromName(grouprole[1]));
                         return;
                     }
                     else if (msgTxt.StartsWith("#allow"))
