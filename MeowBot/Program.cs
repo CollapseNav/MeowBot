@@ -47,6 +47,7 @@ internal partial class Program
     /// <returns></returns>
     private static async Task Main(string[] args)
     {
+        Console.WriteLine(DefaultAiContext.AiContext.Keys.Join(","));
         if (!TryLoadConfig(out var appConfig))
             return;
         if (appConfig.BotWebSocketUri.IsEmpty())
@@ -294,6 +295,7 @@ internal partial class Program
             {
                 await session.SendGroupMessageAsync(context.GroupId, new CqMessage(context.Message.Text.Substring(5)));
             }
+            return;
         });
 
         // 群邀请

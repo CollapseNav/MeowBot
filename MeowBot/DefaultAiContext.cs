@@ -4,10 +4,17 @@ namespace MeowBot;
 
 public class DefaultAiContext
 {
+    public static string ContextPath = "AiContext.json";
     static DefaultAiContext()
     {
         AiContext.AddOrUpdate("CatGirl".ToLower(), CatGirl);
         AiContext.AddOrUpdate("NewBing".ToLower(), NewBing);
+        if (File.Exists(ContextPath))
+        {
+            var dict = File.ReadAllText(ContextPath).ToObj<Dictionary<string, string>>();
+            foreach (var kv in dict)
+                AiContext.AddOrUpdate(kv);
+        }
     }
     public static string CatGirl = OpenAiCompletionInitTexts.CatGirl;
     public static string NewBing = OpenAiCompletionInitTexts.NewBing;
