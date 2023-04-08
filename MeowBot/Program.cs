@@ -171,6 +171,10 @@ internal partial class Program
                     else if (msgTxt.StartsWith("#reset", StringComparison.OrdinalIgnoreCase))
                     {
                         aiSession.Session.Reset();
+                        if (appConfig.GroupConfigs.Any(item => item.GroupId == context.GroupId))
+                        {
+                            aiSession.Session.InitWithText(DefaultAiContext.GetFromName(appConfig.GroupConfigs.FirstOrDefault(item => item.GroupId == context.GroupId).Role));
+                        }
                         await session.SendGroupMsgAsync(context.GroupId, context.UserId, "> 会话已重置");
 
                         return;
