@@ -34,7 +34,6 @@ internal class CommandManager
                     helpText.AppendLine("".PadRight(12) + cmd.Help);
             });
             helpText.AppendLine($"注意, 普通用户最多保留 {AppConfig.MaxHistory} 条聊天记录, 多的会被删除, 也就是说, 机器人会逐渐忘记你");
-            await Console.Out.WriteLineAsync(helpText.ToString());
             await session.SendGroupMsgAsync(context.GroupId, context.UserId, helpText.ToString());
             return;
         }
