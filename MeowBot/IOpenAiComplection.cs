@@ -2,7 +2,7 @@
 
 namespace MeowBot
 {
-    internal interface IOpenAiComplection
+    public interface IOpenAiComplection
     {
         void InitWithText(string text);
         void Reset();

@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using Collapsenav.Net.Tool;
 using EleCho.GoCqHttpSdk;
 using EleCho.GoCqHttpSdk.Message;
@@ -18,7 +17,6 @@ internal partial class Program
     {
         if (!File.Exists(AppConfig.Filename))
         {
-            JsonExt.DefaultJsonSerializerOption.WriteIndented = true;
             new AppConfig().ToJson().ToBytes().SaveTo(AppConfig.Filename);
 
             Console.WriteLine("配置文件已生成, 请编辑后启动程序");
@@ -37,7 +35,8 @@ internal partial class Program
             return false;
         }
 
-        return true;
+
+        return appConfig.CheckBotSocket() && appConfig.CheckApiKey();
     }
 
     /// <summary>
@@ -47,24 +46,13 @@ internal partial class Program
     /// <returns></returns>
     private static async Task Main(string[] args)
     {
-        Console.WriteLine(DefaultAiContext.AiContext.Keys.Join(","));
+        // 设置默认json序列化带缩进
+        JsonExt.DefaultJsonSerializerOption.WriteIndented = true;
         if (!TryLoadConfig(out var appConfig))
             return;
-        if (appConfig.BotWebSocketUri.IsEmpty())
-        {
-            Console.WriteLine("请指定机器人 WebSocket URI");
-            Utils.PressAnyKeyToContinue();
-            return;
-        }
+        AppConfig.CurrentConfig = appConfig;
 
-        if (appConfig.ApiKey.IsEmpty())
-        {
-            Console.WriteLine("请指定机器人 API Key");
-            Utils.PressAnyKeyToContinue();
-            return;
-        }
-
-        CqWsSession session = new CqWsSession(new CqWsSessionOptions()
+        CqWsSession session = new(new CqWsSessionOptions()
         {
             BaseUri = new Uri(appConfig.BotWebSocketUri!)
         });
@@ -79,7 +67,7 @@ internal partial class Program
             await next.Invoke();
         });
 
-
+        var resetCommand = new ResetCommand(appConfig, session);
         Dictionary<(long, long), AiComplectionSessionStorage> aiSessions = new Dictionary<(long, long), AiComplectionSessionStorage>();
         session.UseGroupMessage(async context =>
         {
@@ -94,10 +82,7 @@ internal partial class Program
                     if (!aiSessions.TryGetValue((context.GroupId, context.UserId), out AiComplectionSessionStorage? aiSession))
                     {
                         aiSessions[(context.GroupId, context.UserId)] = aiSession = new(
-                            new OpenAiChatCompletionSession(
-                                appConfig.ApiKey!,
-                                appConfig.ChatCompletionApiUrl ?? AppConfig.DefaultChatCompletionApiUrl,
-                                appConfig.GptModel ?? AppConfig.DefaultGptModel));
+                            appConfig.CreateNewSession());
 
                         if (aiSession.Session is OpenAiChatCompletionSession chatCompletionSession)
                         {
@@ -170,13 +155,13 @@ internal partial class Program
                     }
                     else if (msgTxt.StartsWith("#reset", StringComparison.OrdinalIgnoreCase))
                     {
-                        aiSession.Session.Reset();
-                        if (appConfig.GroupConfigs.Any(item => item.GroupId == context.GroupId))
-                        {
-                            aiSession.Session.InitWithText(DefaultAiContext.GetFromName(appConfig.GroupConfigs.FirstOrDefault(item => item.GroupId == context.GroupId).Role));
-                        }
-                        await session.SendGroupMsgAsync(context.GroupId, context.UserId, "> 会话已重置");
-
+                        // aiSession.Session.Reset();
+                        // if (appConfig.GroupConfigs.Any(item => item.GroupId == context.GroupId))
+                        // {
+                        //     aiSession.Session.InitWithText(DefaultAiContext.GetFromName(appConfig.GroupConfigs.FirstOrDefault(item => item.GroupId == context.GroupId).Role));
+                        // }
+                        // await session.SendGroupMsgAsync(context.GroupId, context.UserId, "> 会话已重置");
+                        await resetCommand.ExecAsync(context, aiSession.Session);
                         return;
                     }
                     else if (msgTxt.HasStartsWith(new[] { "#role:", "#role" }, true))
