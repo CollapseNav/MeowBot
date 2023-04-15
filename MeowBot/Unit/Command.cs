@@ -30,7 +30,7 @@ internal abstract class Command
     /// 帮助
     /// </summary>
     public string Help { get; set; }
-    public abstract Task<bool> ExecAsync(CqGroupMessagePostContext context, IOpenAiComplection session);
+    public abstract Task<bool> ExecAsync(CqGroupMessagePostContext context, IOpenAiComplection aiSession);
     public bool CheckPrefix(string msg)
     {
         return msg.HasStartsWith(new[] { Prefix }, true);

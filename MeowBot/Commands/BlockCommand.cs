@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using EleCho.GoCqHttpSdk;
 using EleCho.GoCqHttpSdk.Post;
 

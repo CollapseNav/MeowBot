@@ -41,6 +41,7 @@ namespace MeowBot
         public GroupConfig[] GroupConfigs { get; set; } = Array.Empty<GroupConfig>();
         public static string DefaultChatCompletionApiUrl { get; } = "https://api.openai.com/v1/chat/completions";
         public static string DefaultGptModel { get; } = "gpt-3.5-turbo";
+        public static int MaxHistory { get; set; } = 50;
 
         public bool CheckBotSocket()
         {

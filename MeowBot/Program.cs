@@ -51,30 +51,22 @@ internal partial class Program
         if (!TryLoadConfig(out var appConfig))
             return;
         AppConfig.CurrentConfig = appConfig;
-
         CqWsSession session = new(new CqWsSessionOptions()
         {
             BaseUri = new Uri(appConfig.BotWebSocketUri!)
         });
-
-
         // 拦截黑名单
         session.UseGroupMessage(async (context, next) =>
         {
             if (appConfig.BlockList.Contains(context.UserId))
                 return;
-
             await next.Invoke();
         });
-
-        CommandManager manager = new CommandManager(appConfig, session);
-
+        CommandManager manager = new(appConfig, session);
 
         Dictionary<(long, long), AiComplectionSessionStorage> aiSessions = new Dictionary<(long, long), AiComplectionSessionStorage>();
         session.UseGroupMessage(async context =>
         {
-            int maxHistoryCount = 50;
-
             try
             {
                 if (context.Message.Any(msg => msg is CqAtMsg atMsg && atMsg.Target == context.SelfId))
@@ -112,168 +104,119 @@ internal partial class Program
                         return;
                     }
 
-                    if (msgTxt.StartsWith("#help", StringComparison.OrdinalIgnoreCase))
-                    {
-                        string helpText =
-                            $"""
-                            (机器人指令)
+                    await manager.ExecAsync(context, aiSession.Session);
 
-                            #role:角色           切换角色, 目前支持 {DefaultAiContext.AiContext.Keys.Join(",")}
-                            #reset               重置聊天记录
-                            {(!context.UserId.In(appConfig.AdminList) ? "" :
-                            """
-                            #role:
-                                添加新角色 +{角色名称}$${上下文}
-                                删除角色   -{角色名称}
-                            #allow: 白名单,多个号用逗号(,)隔开
-                            #block: 黑名单,多个号用逗号(,)隔开
-                            #grouprole 群上下文设置, {群号}:{角色}
-                            """
-                            )}
-                            注意, 普通用户最多保留 {maxHistoryCount} 条聊天记录, 多的会被删除, 也就是说, 机器人会逐渐忘记你
-                            """;
-                        await session.SendGroupMsgAsync(context.GroupId, context.UserId, helpText);
-                    }
-                    else if (msgTxt.StartsWith("#grouprole"))
-                    {
-                        var grouprole = msgTxt[10..].Trim().Split(":");
-                        appConfig.SetGroupRole(long.Parse(grouprole[0]), grouprole[1]);
-                        await Console.Out.WriteLineAsync(appConfig.GroupConfigs.ToJson());
-                        await session.SendGroupMsgAsync(context.GroupId, context.UserId, "> 已修改设置");
-                        aiSession.Session.InitWithText(DefaultAiContext.GetFromName(grouprole[1]));
-                        return;
-                    }
-                    else if (msgTxt.StartsWith("#allow"))
-                    {
-                        await manager.ExecAsync(context, aiSession.Session);
-                        // var users = msgTxt[6..].Trim();
-                        // appConfig.AddAllowList(users.Split(',').Select(item => long.Parse(item)).ToArray());
-                        return;
-                    }
-                    else if (msgTxt.StartsWith("#block"))
-                    {
-                        await manager.ExecAsync(context, aiSession.Session);
-                        // var users = msgTxt[6..].Trim();
-                        // appConfig.AddBlockList(users.Split(',').Select(item => long.Parse(item)).ToArray());
-                        return;
-                    }
-                    else if (msgTxt.StartsWith("#reset", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // aiSession.Session.Reset();
-                        // if (appConfig.GroupConfigs.Any(item => item.GroupId == context.GroupId))
-                        // {
-                        //     aiSession.Session.InitWithText(DefaultAiContext.GetFromName(appConfig.GroupConfigs.FirstOrDefault(item => item.GroupId == context.GroupId).Role));
-                        // }
-                        // await session.SendGroupMsgAsync(context.GroupId, context.UserId, "> 会话已重置");
-                        await manager.ExecAsync(context, aiSession.Session);
-                        return;
-                    }
-                    else if (msgTxt.HasStartsWith(new[] { "#role:", "#role" }, true))
-                    {
-                        string role = msgTxt.Substring(6).Trim();
+                    // if (msgTxt.StartsWith("#help", StringComparison.OrdinalIgnoreCase))
+                    // {
+                    //     string helpText =
+                    //         $"""
+                    //         (机器人指令)
 
-                        if (context.UserId.In(appConfig.AdminList))
-                        {
-                            if (role.StartsWith('-'))
-                            {
-                                DefaultAiContext.AiContext.Remove(role[1..]);
-                                await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 移除角色 {role[1..]}");
-                                return;
-                            }
-                            else if (role.StartsWith('+'))
-                            {
-                                var content = role[1..].Split("$$");
-                                if (content.IsEmpty())
-                                {
-                                    await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 添加角色格式错误");
-                                }
-                                DefaultAiContext.AiContext.AddOrUpdate(content[0], content[1]);
-                                await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 添加角色 {content[0]}");
-                                return;
-                            }
-                        }
-                        string? initText = DefaultAiContext.GetFromName(role);
-                        if (initText != null)
-                        {
-                            aiSession.Session.InitWithText(initText);
-                            await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 角色已更新:\n{initText}");
-                        }
-                        else
-                            await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 找不到执行的角色");
-                    }
-                    else if (msgTxt.StartsWith("#history", StringComparison.OrdinalIgnoreCase))
-                    {
-                        CqMessage message = new CqMessage()
-                        {
-                            new CqAtMsg(context.UserId),
-                            new CqTextMsg($"> 历史记录: {aiSession.Session.History.Count}条")
-                        };
+                    //         #role:角色           切换角色, 目前支持 {DefaultAiContext.AiContext.Keys.Join(",")}
+                    //         #reset               重置聊天记录
+                    //         {(!context.UserId.In(appConfig.AdminList) ? "" :
+                    //         """
+                    //         #role:
+                    //             添加新角色 +{角色名称}$${上下文}
+                    //             删除角色   -{角色名称}
+                    //         #allow: 白名单,多个号用逗号(,)隔开
+                    //         #block: 黑名单,多个号用逗号(,)隔开
+                    //         #grouprole 群上下文设置, {群号}:{角色}
+                    //         """
+                    //         )}
+                    //         注意, 普通用户最多保留 {maxHistoryCount} 条聊天记录, 多的会被删除, 也就是说, 机器人会逐渐忘记你
+                    //         """;
+                    //     await session.SendGroupMsgAsync(context.GroupId, context.UserId, helpText);
+                    // }
+                    // else if (msgTxt.StartsWith("#grouprole"))
+                    // {
+                    //     var grouprole = msgTxt[10..].Trim().Split(":");
+                    //     appConfig.SetGroupRole(long.Parse(grouprole[0]), grouprole[1]);
+                    //     await Console.Out.WriteLineAsync(appConfig.GroupConfigs.ToJson());
+                    //     await session.SendGroupMsgAsync(context.GroupId, context.UserId, "> 已修改设置");
+                    //     aiSession.Session.InitWithText(DefaultAiContext.GetFromName(grouprole[1]));
+                    //     return;
+                    // }
+                    // else if (msgTxt.StartsWith("#allow"))
+                    // {
+                    //     await manager.ExecAsync(context, aiSession.Session);
+                    //     return;
+                    // }
+                    // else if (msgTxt.StartsWith("#block"))
+                    // {
+                    //     await manager.ExecAsync(context, aiSession.Session);
+                    //     return;
+                    // }
+                    // else if (msgTxt.StartsWith("#reset", StringComparison.OrdinalIgnoreCase))
+                    // {
+                    //     await manager.ExecAsync(context, aiSession.Session);
+                    //     return;
+                    // }
+                    // else if (msgTxt.HasStartsWith(new[] { "#role:", "#role" }, true))
+                    // {
+                    //     string role = msgTxt.Substring(6).Trim();
 
-                        bool inWhiteList = false;
-                        if (appConfig.AllowList != null && appConfig.AllowList.Contains(context.UserId))
-                            inWhiteList = true;
+                    //     if (context.UserId.In(appConfig.AdminList))
+                    //     {
+                    //         if (role.StartsWith('-'))
+                    //         {
+                    //             DefaultAiContext.AiContext.Remove(role[1..]);
+                    //             await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 移除角色 {role[1..]}");
+                    //             return;
+                    //         }
+                    //         else if (role.StartsWith('+'))
+                    //         {
+                    //             var content = role[1..].Split("$$");
+                    //             if (content.IsEmpty())
+                    //             {
+                    //                 await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 添加角色格式错误");
+                    //             }
+                    //             DefaultAiContext.AiContext.AddOrUpdate(content[0], content[1]);
+                    //             await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 添加角色 {content[0]}");
+                    //             return;
+                    //         }
+                    //     }
+                    //     string? initText = DefaultAiContext.GetFromName(role);
+                    //     if (initText != null)
+                    //     {
+                    //         aiSession.Session.InitWithText(initText);
+                    //         await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 角色已更新:\n{initText}");
+                    //     }
+                    //     else
+                    //         await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"> 找不到执行的角色");
+                    // }
+                    // else if (msgTxt.StartsWith("#history", StringComparison.OrdinalIgnoreCase))
+                    // {
+                    //     CqMessage message = new CqMessage()
+                    //     {
+                    //         new CqAtMsg(context.UserId),
+                    //         new CqTextMsg($"> 历史记录: {aiSession.Session.History.Count}条")
+                    //     };
 
-                        if (!inWhiteList)
-                            message.Add(new CqTextMsg($"(您的聊天会话最多保留 {maxHistoryCount} 条消息)"));
+                    //     bool inWhiteList = false;
+                    //     if (appConfig.AllowList != null && appConfig.AllowList.Contains(context.UserId))
+                    //         inWhiteList = true;
 
-                        await session.SendGroupMessageAsync(context.GroupId, message);
-                    }
-                    else if (msgTxt.StartsWith("#custom-role:", StringComparison.OrdinalIgnoreCase) ||
-                             msgTxt.StartsWith("#custom-role ", StringComparison.OrdinalIgnoreCase))
-                    {
-                        string initText = msgTxt.Substring(13);
-                        aiSession.Session.InitWithText(initText);
-                        await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
-                            {
-                                new CqAtMsg(context.UserId),
-                                new CqTextMsg($"> 角色已更新:\n{initText}")
-                            });
-                        aiSession.Session.Reset();
-                    }
-                    else
-                    {
-                        bool dequeue = false;
-                        if (aiSession.Session.History.Count > maxHistoryCount && (appConfig.AllowList == null || !appConfig.AllowList.Contains(context.UserId)))
-                            dequeue = true;
+                    //     if (!inWhiteList)
+                    //         message.Add(new CqTextMsg($"(您的聊天会话最多保留 {maxHistoryCount} 条消息)"));
 
-                        if (dequeue)
-                            while (aiSession.Session.History.Count > maxHistoryCount)
-                                aiSession.Session.History.Dequeue();
-
-                        try
-                        {
-                            Result<string, string> result =
-                                await aiSession.Session.AskAsync(context.Message.Text);
-
-                            switch (result)
-                            {
-                                case OkResult<string, string> ok:
-                                    CqMessage message = new CqMessage()
-                                    {
-                                        new CqAtMsg(context.UserId),
-                                        new CqTextMsg(ok.Value),
-                                    };
-
-                                    if (dequeue)
-                                        message.WithTail($"(消息历史记录超过 {maxHistoryCount} 条, 已删去多余的历史记录)");
-
-                                    await session.SendGroupMessageAsync(context.GroupId, message);
-
-                                    aiSession.AddUsage();
-                                    break;
-                                case ErrResult<string, string> err:
-                                    await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"(请求失败, 请重新尝试, 你也可以使用 #reset 重置机器人. {err.Value})");
-                                    break;
-
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            await session.SendGroupMsgAsync(context.GroupId, context.UserId, "(请求失败, 请重新尝试, 你也可以使用 #reset 重置机器人)");
-
-                            await Console.Out.WriteLineAsync($"Exception: {ex}");
-                        }
-                    }
+                    //     await session.SendGroupMessageAsync(context.GroupId, message);
+                    // }
+                    // else if (msgTxt.StartsWith("#custom-role:", StringComparison.OrdinalIgnoreCase) ||
+                    //          msgTxt.StartsWith("#custom-role ", StringComparison.OrdinalIgnoreCase))
+                    // {
+                    //     string initText = msgTxt.Substring(13);
+                    //     aiSession.Session.InitWithText(initText);
+                    //     await session.SendGroupMessageAsync(context.GroupId, new CqMessage()
+                    //         {
+                    //             new CqAtMsg(context.UserId),
+                    //             new CqTextMsg($"> 角色已更新:\n{initText}")
+                    //         });
+                    //     aiSession.Session.Reset();
+                    // }
+                    // else
+                    // {
+                    // }
                 }
             }
             catch (Exception ex)
