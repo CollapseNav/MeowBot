@@ -1,4 +1,5 @@
 using Collapsenav.Net.Tool;
+using EleCho.GoCqHttpSdk;
 using EleCho.GoCqHttpSdk.Post;
 
 namespace MeowBot;
@@ -8,6 +9,15 @@ namespace MeowBot;
 /// </summary>
 internal abstract class Command
 {
+    protected readonly AppConfig config;
+    protected readonly CqWsSession session;
+
+    protected Command(AppConfig config, CqWsSession session)
+    {
+        this.config = config;
+        this.session = session;
+    }
+
     /// <summary>
     /// 前缀
     /// </summary>
@@ -20,7 +30,7 @@ internal abstract class Command
     /// 帮助
     /// </summary>
     public string Help { get; set; }
-    public abstract Task ExecAsync(CqGroupMessagePostContext context, IOpenAiComplection session);
+    public abstract Task<bool> ExecAsync(CqGroupMessagePostContext context, IOpenAiComplection session);
     public bool CheckPrefix(string msg)
     {
         return msg.HasStartsWith(new[] { Prefix }, true);

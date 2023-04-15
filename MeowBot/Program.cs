@@ -67,7 +67,9 @@ internal partial class Program
             await next.Invoke();
         });
 
-        var resetCommand = new ResetCommand(appConfig, session);
+        CommandManager manager = new CommandManager(appConfig, session);
+
+
         Dictionary<(long, long), AiComplectionSessionStorage> aiSessions = new Dictionary<(long, long), AiComplectionSessionStorage>();
         session.UseGroupMessage(async context =>
         {
@@ -143,14 +145,16 @@ internal partial class Program
                     }
                     else if (msgTxt.StartsWith("#allow"))
                     {
-                        var users = msgTxt[6..].Trim();
-                        appConfig.AddAllowList(users.Split(',').Select(item => long.Parse(item)).ToArray());
+                        await manager.ExecAsync(context, aiSession.Session);
+                        // var users = msgTxt[6..].Trim();
+                        // appConfig.AddAllowList(users.Split(',').Select(item => long.Parse(item)).ToArray());
                         return;
                     }
                     else if (msgTxt.StartsWith("#block"))
                     {
-                        var users = msgTxt[6..].Trim();
-                        appConfig.AddBlockList(users.Split(',').Select(item => long.Parse(item)).ToArray());
+                        await manager.ExecAsync(context, aiSession.Session);
+                        // var users = msgTxt[6..].Trim();
+                        // appConfig.AddBlockList(users.Split(',').Select(item => long.Parse(item)).ToArray());
                         return;
                     }
                     else if (msgTxt.StartsWith("#reset", StringComparison.OrdinalIgnoreCase))
@@ -161,7 +165,7 @@ internal partial class Program
                         //     aiSession.Session.InitWithText(DefaultAiContext.GetFromName(appConfig.GroupConfigs.FirstOrDefault(item => item.GroupId == context.GroupId).Role));
                         // }
                         // await session.SendGroupMsgAsync(context.GroupId, context.UserId, "> 会话已重置");
-                        await resetCommand.ExecAsync(context, aiSession.Session);
+                        await manager.ExecAsync(context, aiSession.Session);
                         return;
                     }
                     else if (msgTxt.HasStartsWith(new[] { "#role:", "#role" }, true))
