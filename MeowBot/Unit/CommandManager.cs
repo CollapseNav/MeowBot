@@ -24,7 +24,7 @@ internal class CommandManager
     public async Task ExecAsync(CqGroupMessagePostContext context, IOpenAiComplection aiSession)
     {
         // 对帮助命令做特殊处理
-        if (context.Message.Text.HasStartsWith(new[] { "#help" }, true))
+        if (context.Message.Text.Trim().HasStartsWith(new[] { "#help" }, true))
         {
             StringBuilder helpText = new("(机器人指令)\n\n");
             Commands.ForEach(cmd =>
@@ -35,13 +35,14 @@ internal class CommandManager
             });
             helpText.AppendLine($"注意, 普通用户最多保留 {AppConfig.MaxHistory} 条聊天记录, 多的会被删除, 也就是说, 机器人会逐渐忘记你");
             await Console.Out.WriteLineAsync(helpText.ToString());
+            await session.SendGroupMsgAsync(context.GroupId, context.UserId, helpText.ToString());
             return;
         }
         // 执行设置的command命令
         foreach (var cmd in Commands)
         {
             if (await cmd.ExecAsync(context, aiSession))
-                break;
+                return;
         }
 
         bool dequeue = false;
