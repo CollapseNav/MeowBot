@@ -26,6 +26,10 @@ internal class ResetCommand : Command
             if (aiContext.NotEmpty())
                 aiSession.InitWithText(aiContext);
         }
+        else
+        {
+            aiSession.InitWithText(AiContext.GetFromName("catgirl"));
+        }
         await session.SendGroupMsgAsync(context.GroupId, context.UserId, "会话已重置");
         return true;
     }
