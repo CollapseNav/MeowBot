@@ -20,7 +20,7 @@ internal class ListRoleCommand : Command
             return false;
         StringBuilder sb = new();
         foreach (var role in AiContext.Context)
-            sb.AppendLine($"{role.Key}:{role.Value}");
+            sb.AppendLine($"{role.Key}");
         await session.SendGroupMsgAsync(context.GroupId, context.UserId, sb.ToString());
         return true;
     }
