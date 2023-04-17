@@ -1,4 +1,3 @@
-using System.Security.AccessControl;
 using EleCho.GoCqHttpSdk;
 using EleCho.GoCqHttpSdk.Post;
 
