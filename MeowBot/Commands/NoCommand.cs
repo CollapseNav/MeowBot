@@ -14,6 +14,9 @@ internal class NoCommand : Command
 
     public override async Task<bool> ExecAsync(CqGroupMessagePostContext context, IOpenAiComplection aiSession)
     {
+        var msg = context.Message.Text.Trim();
+        if (msg.StartsWith('#'))
+            return false;
         var groupConfig = config.GetGroupConfig(context.GroupId);
 
         bool dequeue = false;
