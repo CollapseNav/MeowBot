@@ -20,15 +20,15 @@ internal abstract class Command
     /// <summary>
     /// 前缀
     /// </summary>
-    public string Prefix { get; set; }
+    public string Prefix { get; set; } = "";
     /// <summary>
     /// 描述
     /// </summary>
-    public string Description { get; set; }
+    public string Description { get; set; } = "";
     /// <summary>
     /// 帮助
     /// </summary>
-    public string Help { get; set; }
+    public string Help { get; set; } = "";
     public abstract Task<bool> ExecAsync(CqGroupMessagePostContext context, IOpenAiComplection aiSession);
     public bool CheckPrefix(string msg)
     {
