@@ -40,38 +40,5 @@ internal class CommandManager
             if (await cmd.ExecAsync(context, aiSession))
                 return;
         }
-        bool dequeue = false;
-        if (aiSession.History.Count > AppConfig.MaxHistory && (config.AllowList == null || !config.AllowList.Contains(context.UserId)))
-            dequeue = true;
-
-        if (dequeue)
-            while (aiSession.History.Count > AppConfig.MaxHistory)
-                aiSession.History.Dequeue();
-
-        try
-        {
-            Result<string, string> result = await aiSession.AskAsync(context.Message.Text);
-            switch (result)
-            {
-                case OkResult<string, string> ok:
-                    CqMessage message = new CqMessage()
-                    {
-                        new CqAtMsg(context.UserId),
-                        new CqTextMsg(ok.Value),
-                    };
-                    if (dequeue)
-                        message.WithTail($"消息历史记录超过 {AppConfig.MaxHistory} 条, 已删去多余的历史记录");
-                    await session.SendGroupMessageAsync(context.GroupId, message);
-                    break;
-                case ErrResult<string, string> err:
-                    await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"请求失败, 请重新尝试, 你也可以使用 #reset 重置机器人. {err.Value}");
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            await session.SendGroupMsgAsync(context.GroupId, context.UserId, "请求失败, 请重新尝试, 你也可以使用 #reset 重置机器人");
-            await Console.Out.WriteLineAsync($"Exception: {ex}");
-        }
     }
 }

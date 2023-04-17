@@ -11,7 +11,6 @@ internal abstract class Command
 {
     protected readonly AppConfig config;
     protected readonly CqWsSession session;
-
     protected Command(AppConfig config, CqWsSession session)
     {
         this.config = config;

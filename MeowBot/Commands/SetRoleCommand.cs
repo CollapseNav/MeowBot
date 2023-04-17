@@ -3,7 +3,7 @@ using EleCho.GoCqHttpSdk.Post;
 
 namespace MeowBot;
 
-internal class SetRoleCommand : Command
+internal class SetRoleCommand : AdminCommand
 {
     public SetRoleCommand(AppConfig config, CqWsSession session) : base(config, session)
     {
@@ -17,6 +17,11 @@ internal class SetRoleCommand : Command
         var msg = context.Message.Text.Trim();
         if (!CheckPrefix(msg))
             return false;
+        if (!config.IsAdmin(context.UserId))
+        {
+            await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"只有管理员才可以使用该命令");
+            return true;
+        }
         var grouprole = msg[Prefix.Length..].Trim().Split(":");
         config.SetGroupRole(long.Parse(grouprole[0]), grouprole[1]);
         await session.SendGroupMsgAsync(context.GroupId, context.UserId, $"群号 {grouprole[0]} 角色设置为 {grouprole[1]}");

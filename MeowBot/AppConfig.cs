@@ -86,7 +86,7 @@ namespace MeowBot
         {
             var list = BlockList.ToList();
             list.AddRange(userIds);
-            BlockList = list.Unique().ToArray();
+            BlockList = list.Unique().Except(AdminList).ToArray();
             SaveConfig();
         }
         /// <summary>
@@ -125,6 +125,11 @@ namespace MeowBot
         public GroupConfig? GetGroupConfig(long groupId)
         {
             return GroupConfigs.FirstOrDefault(item => item.GroupId == groupId);
+        }
+
+        public bool IsAdmin(long userId)
+        {
+            return AdminList.Any(item => item == userId);
         }
     }
 }
