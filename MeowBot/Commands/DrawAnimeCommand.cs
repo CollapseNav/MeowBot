@@ -47,7 +47,8 @@ internal class DrawAnimeCommand : Command
             {
                 prompt = prompts.Join(","),
                 negative_prompt = "(worst quality, low quality:1.4), monochrome, zombie,",
-                steps = 20
+                steps = 20,
+                save_images = true,
             });
             var str = await res.Content.ReadAsStringAsync();
             var bytes = str.ToObj<ImageResult>().Images.First().FromBase64();
