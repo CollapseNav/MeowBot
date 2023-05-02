@@ -1,5 +1,6 @@
-﻿using RustSharp;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
+using Collapsenav.Net.Tool;
+using RustSharp;
 
 namespace MeowBot
 {
@@ -46,11 +47,14 @@ namespace MeowBot
         {
             List<object> messageModels = new List<object>();
 
-            messageModels.Add(new
+            if (initText.NotEmpty())
             {
-                role = "system",
-                content = initText
-            });
+                messageModels.Add(new
+                {
+                    role = "system",
+                    content = initText
+                });
+            }
 
             messageModels.Add(new
             {

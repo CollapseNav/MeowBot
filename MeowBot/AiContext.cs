@@ -13,7 +13,7 @@ public class AiContext
         if (File.Exists(ContextPath))
         {
             var dict = File.ReadAllText(ContextPath).ToObj<Dictionary<string, string>>();
-            foreach (var kv in dict.Where(item => item.Key.NotEmpty() && item.Value.NotEmpty()))
+            foreach (var kv in dict.Where(item => item.Key.NotEmpty()))
                 Context.AddOrUpdate(kv);
         }
     }
