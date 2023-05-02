@@ -28,8 +28,13 @@ internal class HistoryCommand : Command
             inWhiteList = true;
 
         if (!inWhiteList)
+        {
+            foreach (var h in aiSession.History)
+            {
+                message.Add(new CqTextMsg(h.Value));
+            }
             message.Add(new CqTextMsg($"(您的聊天会话最多保留 {AppConfig.MaxHistory} 条消息)"));
-
+        }
         await session.SendGroupMessageAsync(context.GroupId, message);
         return true;
     }

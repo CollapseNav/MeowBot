@@ -1,0 +1,13 @@
+{
+  "apiKey": "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",
+  "botWebSocketUri": "ws://45.63.4.20:8080",
+  "chatCompletionApiUrl": null,
+  "textCompletionApiUrl": null,
+  "gptModel": "gpt-3.5-turbo",
+  "usageLimitTime": 300,
+  "usageLimitCount": 5,
+  "allowList": [],
+  "blockList": [],
+  "adminList": [],
+  "groupConfigs": []
+}

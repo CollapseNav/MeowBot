@@ -126,5 +126,14 @@ namespace MeowBot
         {
             return GroupConfigs.FirstOrDefault(item => item.GroupId == groupId);
         }
+
+        public static AppConfig LoadFromDefault()
+        {
+            return LoadFrom(Filename);
+        }
+        public static AppConfig LoadFrom(string filePath)
+        {
+            return File.ReadAllText(filePath).ToObj<AppConfig>();
+        }
     }
 }

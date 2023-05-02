@@ -13,6 +13,7 @@
     <PackageReference Include="NLog" Version="5.1.2" />
     <PackageReference Include="RustSharp" Version="1.0.1" />
     <PackageReference Include="Collapsenav.Net.Tool" Version="1.3.2" />
+    <None Include="AiContext.json" CopyToPublishDirectory="Always" CopyToOutputDirectory="Always"  />
   </ItemGroup>
 
 </Project>
