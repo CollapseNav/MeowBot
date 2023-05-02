@@ -62,6 +62,7 @@ internal class DrawAnimeCommand : Command
         {
             await session.SendGroupMsgAsync(context.GroupId, context.UserId, "失败");
         }
+        aiSession.Reset();
         return true;
     }
 }
