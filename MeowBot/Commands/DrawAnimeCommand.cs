@@ -39,7 +39,7 @@ internal class DrawAnimeCommand : Command
             var temp = ok.Value[5..].Trim();
             var prompts = temp.Split(',').Select(item => item.Trim());
             await Console.Out.WriteLineAsync(prompts.ToJson());
-            prompts = prompts.Where(item => item.Length < 20).ToArray();
+            prompts = prompts.Where(item => item.Length < 50).ToArray();
             HttpClient client = new HttpClient();
             string url = "http://49.235.67.56:7503/sdapi/v1/txt2img";
 
