@@ -36,17 +36,20 @@ internal class DrawAnimeCommand : Command
         var result = await aiSession.AskAsync(drawContext);
         if (result is OkResult<string, string> ok)
         {
+            var defaultQualiyPrompts = new[] { "((masterpiece))", "best quality", "highly detailed", "ultra-detailed", };
             var temp = ok.Value[5..].Trim();
             var prompts = temp.Split(',', '.').Select(item => item.Trim()).Where(item => item.NotEmpty()).ToArray();
             await Console.Out.WriteLineAsync(prompts.ToJson());
             prompts = prompts.Where(item => item.Length < 40).ToArray();
+            prompts = prompts.Concat(defaultQualiyPrompts).Unique().ToArray();
             HttpClient client = new HttpClient();
             string url = "http://49.235.67.56:7503/sdapi/v1/txt2img";
+
 
             var res = await client.PostAsJsonAsync(url, new
             {
                 prompt = prompts.Join(","),
-                negative_prompt = "(worst quality, low quality:1.4), monochrome, zombie,",
+                negative_prompt = "(worst quality, low quality:1.4), monochrome, zombie,(nsfw:1.4),(nude:1.4), wrong hand, ",
                 steps = 20,
                 save_images = true,
             });
